@@ -160,9 +160,4 @@ Notes:
   - Move model to CUDA: `model = YOLO(weights).to('cuda')` if available.
   - Print check: `print(next(model.model.parameters()).device)`.
 
-### License and author
-This demo is for educational purposes.
-
-Signed,
-
 Emi Roberti
