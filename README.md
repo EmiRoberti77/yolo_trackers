@@ -160,4 +160,29 @@ Notes:
   - Move model to CUDA: `model = YOLO(weights).to('cuda')` if available.
   - Print check: `print(next(model.model.parameters()).device)`.
 
+### Database logging + Web UI
+This repo includes a lightweight SQLite logger and a FastAPI web UI to analyze tracking statistics (directions, counts, top objects).
+
+- Database module: `db.py` stores per-frame events in `tracking.sqlite3`.
+- Web app: `webapp.py` exposes endpoints and a dashboard template under `templates/index.html`.
+
+How to use:
+1) Run one of the trackers to populate the database.
+```bash
+python3 deepsort.py
+# or
+python3 bytetrack.py
+```
+2) Start the web UI:
+```bash
+python3 -m pip install fastapi uvicorn jinja2
+uvicorn webapp:app --reload
+```
+3) Open `http://127.0.0.1:8000/` in your browser.
+
+Available API endpoints:
+- `GET /api/summary` — totals and top object classes
+- `GET /api/directions` — per-track coarse direction (up/down/left/right)
+- `GET /api/top-objects?limit=10` — top-N classes by count
+
 Emi Roberti

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tracking Dashboard</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 20px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; }
+    h2 { margin-top: 28px; }
+    code { background: #f6f8fa; padding: 2px 4px; border-radius: 4px; }
+  </style>
+  <script>
+    async function loadSummary(){
+      const r = await fetch('/api/summary');
+      const j = await r.json();
+      document.getElementById('total_events').textContent = j.total_events;
+      const tbody1 = document.getElementById('by_object');
+      tbody1.innerHTML = '';
+      j.by_object.forEach(x => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${x.class_id}</td><td>${x.count}</td>`;
+        tbody1.appendChild(tr);
+      });
+      const tbody2 = document.getElementById('by_tracker');
+      tbody2.innerHTML = '';
+      j.by_tracker.forEach(x => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${x.tracker}</td><td>${x.count}</td>`;
+        tbody2.appendChild(tr);
+      });
+    }
+    async function loadDirections(){
+      const r = await fetch('/api/directions');
+      const j = await r.json();
+      const tbody = document.getElementById('directions');
+      tbody.innerHTML = '';
+      j.tracks.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${t.track_id}</td><td>${t.direction}</td><td>${t.dx.toFixed(1)}</td><td>${t.dy.toFixed(1)}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+    window.addEventListener('DOMContentLoaded', () => { loadSummary(); loadDirections(); });
+  </script>
+  </head>
+<body>
+  <h1>Tracking Dashboard</h1>
+  <div class="cards">
+    <div class="card">
+      <h3>Total Events</h3>
+      <div id="total_events">0</div>
+    </div>
+    <div class="card">
+      <h3>Top Objects</h3>
+      <table>
+        <thead><tr><th>Class ID</th><th>Count</th></tr></thead>
+        <tbody id="by_object"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>By Tracker</h3>
+      <table>
+        <thead><tr><th>Tracker</th><th>Count</th></tr></thead>
+        <tbody id="by_tracker"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <h2>Directions of Travel</h2>
+  <table>
+    <thead><tr><th>Track ID</th><th>Direction</th><th>dx</th><th>dy</th></tr></thead>
+    <tbody id="directions"></tbody>
+  </table>
+
+  <h2>Run</h2>
+  <p>
+    1) Run a tracker to populate the DB: <code>python3 deepsort.py</code> or <code>python3 bytetrack.py</code><br/>
+    2) Start web UI: <code>uvicorn webapp:app --reload</code>
+  </p>
+</body>
+</html>
+
+

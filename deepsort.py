@@ -2,6 +2,7 @@ import cv2
 import os, sys
 from deep_sort_realtime.deepsort_tracker import DeepSort
 from ultralytics import YOLO
+from db import TrackingDB, compute_timestamp_ms
 import torch
 _DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__)))
@@ -14,6 +15,7 @@ model = YOLO(_MODEL).to(_DEVICE)
 print(f"YOLO model device: {next(model.model.parameters()).device}")
 print(f"Model is on CUDA: {next(model.model.parameters()).is_cuda}")
 tracker = DeepSort(max_age=5)
+db = TrackingDB(os.path.join(_ROOT, 'tracking.sqlite3'))
 cap = cv2.VideoCapture(_VIDEO)
 fps = cap.get(cv2.CAP_PROP_FPS)
 fps = fps if fps and fps > 0 else 30.0
@@ -48,6 +50,23 @@ while True:
         bbox = ( int(ltrb[0]), int(ltrb[1]), int(ltrb[2]), int(ltrb[3]) )
         cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0,255,0), 2)
         cv2.putText(frame, f"{track_id}", (bbox[0], bbox[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+
+        # Log to DB
+        ts_ms = compute_timestamp_ms(frame_idx, fps)
+        db.log_event(
+            video=_VIDEO,
+            tracker="deepsort",
+            model=_MODEL,
+            frame_idx=frame_idx,
+            timestamp_ms=ts_ms,
+            track_id=int(track_id),
+            class_id=None,
+            conf=None,
+            x1=float(bbox[0]),
+            y1=float(bbox[1]),
+            x2=float(bbox[2]),
+            y2=float(bbox[3]),
+        )
 
     out.write(frame)
     frame_idx += 1

@@ -2,3 +2,4 @@ __pycache__
 *.pt
 tracker_bytetrack.mp4
 tracked_deepsort.mp4
+tracking.sqlite3

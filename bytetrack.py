@@ -2,6 +2,7 @@ import cv2
 import os
 import torch
 from ultralytics import YOLO
+from db import TrackingDB, compute_timestamp_ms
 _DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 _MODEL = os.path.join(_ROOT, 'model', 'yolo11l.pt') 
@@ -19,6 +20,7 @@ fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 _OUT = os.path.join(_ROOT, 'tracker_bytetrack.mp4')
 out = cv2.VideoWriter(_OUT, fourcc, fps, (width, height))
 frame_idx = 0
+db = TrackingDB(os.path.join(_ROOT, 'tracking.sqlite3'))
 while True:
     ok, frame = cap.read()
     if not ok:
@@ -34,6 +36,23 @@ while True:
             tid = int(b.id.item()) if b.id is not None else -1
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 2)
             cv2.putText(frame, f"{tid}:{obj_name}:{conf:.2f}", (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2, cv2.LINE_AA)
+
+            # Log to DB when track id is available
+            ts_ms = compute_timestamp_ms(frame_idx, fps)
+            db.log_event(
+                video=_VIDEO,
+                tracker="bytetrack",
+                model=_MODEL,
+                frame_idx=frame_idx,
+                timestamp_ms=ts_ms,
+                track_id=tid if tid >= 0 else None,
+                class_id=int(b.cls),
+                conf=conf,
+                x1=float(x1),
+                y1=float(y1),
+                x2=float(x2),
+                y2=float(y2),
+            )
         
     out.write(frame)
     frame_idx += 1
